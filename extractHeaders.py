@@ -8,7 +8,7 @@ import argparse
 def extract(args):
     binaryPath = args.binary
     binaryName = os.path.basename(binaryPath)
-    extractDir = args.out + "/"+ binaryName + "_sections"
+    extractDir = args.out + "/"+ binaryName
 
     if not os.path.exists(extractDir):
         os.makedirs(extractDir)
