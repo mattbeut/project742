@@ -23,14 +23,16 @@ def process_files(args):
 
     done = []
     if args.csv:
+        if not os.path.exists(args.out): os.makedirs(args.out)
+        
         # Results in a filename that is the path to the directory with / replaced by _
-        # then -ssdeep_all_files-out.csv In the current directory
+        # then -out.csv In the out directory
         filedir_reformat = filedir.replace('/','_')
         if filedir_reformat.endswith('_') : filedir_reformat = filedir_reformat[0:-1]
         
-        csvfilename = filedir_reformat + '-' + sys.argv[0].split('.')[0] + '-out.csv'
+        csvfilename = filedir_reformat + '-out.csv'
         
-        csvfile= open(csvfilename, 'w')
+        csvfile= open(args.out + "/" + csvfilename, 'w')
         writer = csv.writer(csvfile, delimiter=',')
         writer.writerow(['file1', 'file2', 'similarity', 'hash1', 'hash2'])
     
@@ -55,6 +57,7 @@ def main():
     parser.add_argument('directory', type=str, help="directory to process")
     parser.add_argument('--dedup', dest='dedup', action='store_true', help='set to avoid repetitive comparisons')
     parser.add_argument('--csv', dest='csv', action='store_true', help='set to output to csv')
+    parser.add_argument('-o', dest='out', help='output directory', default="ssdeep_all_files-out")
     
     args = parser.parse_args()
 

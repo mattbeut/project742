@@ -3,20 +3,37 @@
 import sys
 import os
 import subprocess
+import argparse
 
-if len(sys.argv) != 2:
-    print("Must supply binary")
-    sys.exit(0)
+def extract(args):
+    binaryPath = args.binary
+    binaryName = os.path.basename(binaryPath)
+    extractDir = args.out + "/"+ binaryName + "_sections"
 
-binaryPath = sys.argv[1]
-binaryName = os.path.basename(binaryPath)
-extractDir = binaryName + "_sections"
-subprocess.call(['mkdir', extractDir])
+    if not os.path.exists(extractDir):
+        os.makedirs(extractDir)
 
-sections = ['.text', '.data', '.rodata']
+    sections = ['.text', '.data', '.rodata']
 
-for s in sections:
+    for s in sections:
 	outfile = extractDir + '/' + binaryName + s
 	subprocess.call(['objcopy', '-O', 'binary', 
-			'-j', s, binaryPath, outfile])
+			 '-j', s, binaryPath, outfile])
 
+def main():
+    parser = argparse.ArgumentParser(description="Extract the headers of a binary")
+    parser.add_argument('binary', type=str, help="binary to process")
+    parser.add_argument('-o', dest='out', help="output directory", default="extractHeaders-out")
+
+    args = parser.parse_args()
+
+    if not os.path.exists(args.out):
+        os.makedirs(args.out)
+
+    extract(args)
+
+if __name__ == "__main__":
+    main()
+
+
+    
