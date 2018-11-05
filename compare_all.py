@@ -2,16 +2,20 @@
 
 #
 # calls extractHeaders on all of the files in the passed directory, then
-# performs ssdeep on all files between each binary
+# performs chosen algorithm on all files between each binary
 #
 
 import sys
 import os
+import csv
 import argparse
 from shutil import copyfile
+
 import extractHeaders as eh
 import ssdeep_files as sf
-import csv
+import tlsh_files as tf
+
+supported_algs = ["ssdeep", "tlsh"]
 
 #
 # performs extractHeaders on all files in the passed directory
@@ -36,7 +40,7 @@ def preprocess_all(args):
 # the second passed directory
 # writes output with passed writer
 #
-def compare_all_files(d1, d2, writer):
+def compare_all_files(d1, d2, writer, alg):
     
     for file1 in os.listdir(d1):
         ext1 = os.path.splitext(file1)
@@ -49,9 +53,16 @@ def compare_all_files(d1, d2, writer):
                     category = ext1[-1][1:]
                 else:
                     category = "full"
-                    
-                hash1, hash2, sim = sf.ssdeep_files(os.path.join(d1,file1), os.path.join(d2,file2))
-                writer.writerow([file1, file2, category, sim, hash1, hash2])
+
+                if alg == "ssdeep":
+                    hash1, hash2, metric = sf.ssdeep_files(os.path.join(d1,file1), os.path.join(d2,file2))
+                elif alg == "tlsh":
+                    hash1, hash2, metric = tf.tlsh_files(os.path.join(d1,file1), os.path.join(d2,file2))
+                else:
+                    print("[ ERROR ] algorithm not supported")
+                    sys.exit(0)
+                
+                writer.writerow([file1, file2, category, metric, hash1, hash2])
                 
             
 #
@@ -65,10 +76,10 @@ def compare_all_files(d1, d2, writer):
 def compare_all_dirs(args):
     done = []
 
-    csvfilename = "ssdeep-comparisons.csv"
+    csvfilename = args.algorithm + "-comparisons.csv"
     csvfile = open(args.out + "/" + csvfilename, 'w')
     writer = csv.writer(csvfile, delimiter=',')
-    writer.writerow(['file1', 'file2', 'section', 'similarity', 'hash1', 'hash2'])
+    writer.writerow(['file1', 'file2', 'section', 'metric', 'hash1', 'hash2'])
 
     # for every directory
     for d1 in os.listdir(args.out):
@@ -84,7 +95,7 @@ def compare_all_dirs(args):
             # omit self and ones you've already been compared to unless extra is set
             if not args.extra and d2 in done: continue
 
-            compare_all_files(fulld1, fulld2, writer)
+            compare_all_files(fulld1, fulld2, writer, args.algorithm)
             
     csvfile.close()
         
@@ -93,9 +104,10 @@ def compare_all_dirs(args):
 def main():
     parser = argparse.ArgumentParser(description="extractHeaders from all files in a directory")
     parser.add_argument('directory', type=str, help="directory to process")
+    parser.add_argument('algorithm', type=str, help='algorithm to use')
     parser.add_argument('--extra', dest='extra', action='store_true',
                         help='set to perform repetitive comparisons (self to self, file1 to file2 and vice versa)')
-    parser.add_argument('-o', dest='out', help='output directory', default="out-ssdeep_all")
+    parser.add_argument('-o', dest='out', help='output directory', default="out-compare_all")
     args = parser.parse_args()
 
     if not os.path.exists(args.out): os.makedirs(args.out)
@@ -106,6 +118,11 @@ def main():
     if filedir_reformat.endswith('_'): filedir_reformat = filedir_reformat[0:-1]
     args.out = args.out + "/" + filedir_reformat
 
+    # double check that algorithm is supported before going forward
+    if not args.algorithm in supported_algs:
+        print("[ ERROR ] algorithm not supported: "+ args.algorithm)
+        sys.exit(-1)
+    
     preprocess_all(args)
 
     compare_all_dirs(args)
