@@ -57,7 +57,7 @@ def main():
     parser.add_argument('directory', type=str, help="directory to process")
     parser.add_argument('--dedup', dest='dedup', action='store_true', help='set to avoid repetitive comparisons')
     parser.add_argument('--csv', dest='csv', action='store_true', help='set to output to csv')
-    parser.add_argument('-o', dest='out', help='output directory', default="ssdeep_all_files-out")
+    parser.add_argument('-o', dest='out', help='output directory', default="out-ssdeep_all_files")
     
     args = parser.parse_args()
 

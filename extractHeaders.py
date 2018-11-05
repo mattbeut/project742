@@ -23,7 +23,7 @@ def extract(args):
 def main():
     parser = argparse.ArgumentParser(description="Extract the headers of a binary")
     parser.add_argument('binary', type=str, help="binary to process")
-    parser.add_argument('-o', dest='out', help="output directory", default="extractHeaders-out")
+    parser.add_argument('-o', dest='out', help="output directory", default="out-extractHeaders")
 
     args = parser.parse_args()
 
