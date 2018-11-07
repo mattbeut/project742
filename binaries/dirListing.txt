@@ -3,7 +3,7 @@ Each directory contains all 109 of the coreUtils binaries
 All binaries (except those marked with 'debug') have had their symbols 
 and debug information stripped, to resemble how most malware appears
 
-_Ox directories specify the optimization level the binaries were compiled 
+_Ox specifies the optimization level the binaries were compiled 
 with
 
 
