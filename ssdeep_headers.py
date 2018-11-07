@@ -9,7 +9,8 @@ COMPARE_SCRIPT = 'ssdeep_files.py'
 
 if len(sys.argv) != 3:
     print("Must supply two directories")
-
+    sys.exit(0)
+    
 dir1 = sys.argv[1]
 dir2 = sys.argv[2]
 
