@@ -10,12 +10,14 @@ import os
 import csv
 import argparse
 from shutil import copyfile
+import fileinput
 
 import extractHeaders as eh
 import ssdeep_files as sf
 import tlsh_files as tf
+import mvhash_files as mf
 
-supported_algs = ["ssdeep", "tlsh"]
+supported_algs = ["ssdeep", "tlsh", "mvhash"]
 
 #
 # performs extractHeaders on all files in the passed directory
@@ -54,10 +56,15 @@ def compare_all_files(d1, d2, writer, alg):
                 else:
                     category = "full"
 
+                full_f1 = os.path.join(d1, file1)
+                full_f2 = os.path.join(d2, file2)
+                
                 if alg == "ssdeep":
-                    hash1, hash2, metric = sf.ssdeep_files(os.path.join(d1,file1), os.path.join(d2,file2))
+                    hash1, hash2, metric = sf.ssdeep_files(full_f1, full_f2)
                 elif alg == "tlsh":
-                    hash1, hash2, metric = tf.tlsh_files(os.path.join(d1,file1), os.path.join(d2,file2))
+                    hash1, hash2, metric = tf.tlsh_files(full_f1, full_f2)
+                elif alg == "mvhash":
+                    hash1, hash2, metric = mf.mvhash_files(full_f1, full_f2)
                 else:
                     print("[ ERROR ] algorithm not supported")
                     sys.exit(0)
@@ -98,7 +105,19 @@ def compare_all_dirs(args):
             compare_all_files(fulld1, fulld2, writer, args.algorithm)
             
     csvfile.close()
-        
+
+    return csvfilename
+
+
+def create_html_from_template(out, csvfilename):
+    template_file = "template.html"
+
+    # same name as csv file but with .html ext
+    html_file = os.path.join(out, os.path.splitext(csvfilename)[0] + ".html")
+    copyfile(template_file, html_file)
+    
+    for line in fileinput.input(html_file, inplace=True):
+        print line.replace("%CSV_FILENAME%", csvfilename),
 
         
 def main():
@@ -108,6 +127,8 @@ def main():
     parser.add_argument('--extra', dest='extra', action='store_true',
                         help='set to perform repetitive comparisons (self to self, file1 to file2 and vice versa)')
     parser.add_argument('-o', dest='out', help='output directory', default="out-compare_all")
+    parser.add_argument('--viz', dest='viz', action='store_true', help='set to create html visualization')
+    
     args = parser.parse_args()
 
     if not os.path.exists(args.out): os.makedirs(args.out)
@@ -125,7 +146,10 @@ def main():
     
     preprocess_all(args)
 
-    compare_all_dirs(args)
+    csvfile = compare_all_dirs(args)
+
+    if args.viz :
+        create_html_from_template(args.out, csvfile)
 
     
     
