@@ -27,6 +27,9 @@ def bucket(args):
                 'coreutils_nops':
                 ['coreutils_8.30_O2', 'coreutils_8.30_O2_nops1', 'coreutils_8.30_O2_nops10']
                 }
+    
+    # Bucket to contain all binaries
+    allBucket_path = os.path.join(args.out, 'coreutils_all')
 
     for dir_name in os.listdir(args.directory):
         dir_path = os.path.join(args.directory, dir_name)
@@ -35,7 +38,7 @@ def bucket(args):
         for file_name in os.listdir(dir_path):
             file_path = os.path.join(dir_path, file_name)
 
-            matching_buckets = []
+            matching_buckets = [allBucket_path]
             for bucket_name in buckets.keys():
                 if dir_name in buckets[bucket_name]:
                     bucket_path = os.path.join(args.out, bucket_name) 
