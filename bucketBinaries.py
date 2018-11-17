@@ -8,24 +8,24 @@ import shutil
 def bucket(args):
     buckets =   {
                 # Identical, new build 
-                'coreutils_newBuild':   ['coreutils_8.30_O2', 'coreutils_8.30_newBuild'],
+                'coreutils_newBuild':   ['coreutils_8-30_O2', 'coreutils_8-30_newBuild'],
                 # Identical, new build with debug/symbols
-                'coreutils_debug':      ['coreutils_8.30_O2_debug', 'coreutils_8.30_O2_newBuild_debug'],
+                'coreutils_debug':      ['coreutils_8-30_O2_debug', 'coreutils_8-30_O2_newBuild_debug'],
                 # Different major version
-                'coreutils_major':      ['coreutils_6.12_O2', 'coreutils_7.6_O2', 'coreutils_8.30_O2'],
+                'coreutils_major':      ['coreutils_6-12_O2', 'coreutils_7-6_O2', 'coreutils_8-30_O2'],
                 # Different minor version
                 'coreutils_minor':
-                ['coreutils_8.28_O2', 'coreutils_8.29_O2', 'coreutils_8.30_O2'],
+                ['coreutils_8-28_O2', 'coreutils_8-29_O2', 'coreutils_8-30_O2'],
                 # Different gcc optimization flags
                 'coreutils_optimization':
-                ['coreutils_8.30_O0', 'coreutils_8.30_O1', 'coreutils_8.30_O2',
-                 'coreutils_8.30_O3', 'coreutils_8.30_Os', 'coreutils_8.30_Ofast'],
+                ['coreutils_8-30_O0', 'coreutils_8-30_O1', 'coreutils_8-30_O2',
+                 'coreutils_8-30_O3', 'coreutils_8-30_Os', 'coreutils_8-30_Ofast'],
                 # Functionally identical instruction patches
                 'coreutils_patched':
-                ['coreutils_8.30_O2', 'coreutils_8.30_O2_addForSub', 'coreutils_8.30_O2_addSubSwap'],
+                ['coreutils_8-30_O2', 'coreutils_8-30_O2_addForSub', 'coreutils_8-30_O2_addSubSwap'],
                 # Insertion of 'nop' instructions
                 'coreutils_nops':
-                ['coreutils_8.30_O2', 'coreutils_8.30_O2_nops1', 'coreutils_8.30_O2_nops10']
+                ['coreutils_8-30_O2', 'coreutils_8-30_O2_nops1', 'coreutils_8-30_O2_nops10']
                 }
     
     # Bucket to contain all binaries
