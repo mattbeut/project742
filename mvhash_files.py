@@ -18,23 +18,23 @@ import argparse
 import subprocess
 from subprocess import Popen, PIPE
 
-def mvhash_files(file1, file2):
+def mvhash_files(file1, file2, quiet):
     
     session = subprocess.Popen(['./mvHash', '-g', file1, file2],
                                stdout=PIPE, stderr=PIPE)
     stdout,stderr = session.communicate()
 
     similarity_str = stdout.split('|')[-1]
-    print("%s | %s"%(file1, file2))
+    if not quiet: print("%s | %s"%(file1, file2))
 
     try:
         similarity = int(similarity_str)
-        print("Similarity: " + similarity_str + ">")
+        if not quiet: print("Similarity: " + similarity_str + ">")
         return "", "", similarity        
     except Exception:
         # having trouble catching the output from mvHash here. Most likely
         # files too short. You can run with normal mvHash to see
-        print("Similarity could not be calculated")
+        if not quiet: print("Similarity could not be calculated")
         return "", "", None
 
 def main():

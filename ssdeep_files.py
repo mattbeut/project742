@@ -2,19 +2,19 @@
 import sys
 import ssdeep
 
-def ssdeep_files(file1, file2):
+def ssdeep_files(file1, file2, quiet):
     with open(file1, 'rb') as f1:
         hash1 = ssdeep.hash(f1.read())
             
     with open(file2, 'rb') as f2:
         hash2 = ssdeep.hash(f2.read())
 
-    print("%s hash: %s" %(file1, hash1))
-    print("%s hash: %s" %(file2, hash2))
+    if not quiet: print("%s hash: %s" %(file1, hash1))
+    if not quiet: print("%s hash: %s" %(file2, hash2))
 
     similar = ssdeep.compare(hash1, hash2)
-        
-    print("Similarity: %d" %similar)
+       
+    if not quiet: print("Similarity: %d" %similar)
 
     return hash1, hash2, similar
 
