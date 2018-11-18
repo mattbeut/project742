@@ -19,13 +19,9 @@ import mvhash_files as mf
 
 supported_algs = ["ssdeep", "tlsh", "mvhash"]
 
-#
-# performs extractHeaders on all files in the passed directory
-# and copies the original files to the out directory for comparison
-#
-def preprocess_all(args):
+def preprocess_dir(args):
     filedir = args.directory
-    
+
     for f in os.listdir(filedir):
         rel_path = filedir + "/" + f
         args.binary = rel_path
@@ -35,6 +31,20 @@ def preprocess_all(args):
         # copy original file over too for full comparison
         # XXX: not ideal, dependant on extractHeaders' format
         copyfile(rel_path, args.out + "/" + f +"/" + f)
+#
+# performs extractHeaders on all files in the passed directory
+# and copies the original files to the out directory for comparison
+#
+def preprocess_all(args):
+    filedir = args.directory
+    
+    if args.allDirs:
+        for d in os.listdir(filedir):
+            if os.path.isfile(d): continue
+            args.directory = os.path.join(filedir, d)
+            preprocess_dir(args)
+    else:
+        preprocess_dir(args)
 
 #
 # Pretty much the same code as in ssdeep_headers.py but with writes to csv file
@@ -42,7 +52,7 @@ def preprocess_all(args):
 # the second passed directory
 # writes output with passed writer
 #
-def compare_all_files(d1, d2, writer, alg):
+def compare_all_files(d1, d2, writer, alg, quiet):
     
     for file1 in os.listdir(d1):
         ext1 = os.path.splitext(file1)
@@ -60,23 +70,30 @@ def compare_all_files(d1, d2, writer, alg):
                 full_f2 = os.path.join(d2, file2)
                
                 if alg == 'all':
-                    _,_,ssdeep = sf.ssdeep_files(full_f1, full_f2)
-                    _,_,tlsh = tf.tlsh_files(full_f1, full_f2)
-                    _,_,mvhash = mf.mvhash_files(full_f1, full_f2)
+                    _,_,ssdeep = sf.ssdeep_files(full_f1, full_f2, quiet)
+                    _,_,tlsh = tf.tlsh_files(full_f1, full_f2, quiet)
+                    _,_,mvhash = mf.mvhash_files(full_f1, full_f2, quiet)
                 elif alg == "ssdeep":
-                    hash1, hash2, metric = sf.ssdeep_files(full_f1, full_f2)
+                    hash1, hash2, metric = sf.ssdeep_files(full_f1, full_f2, quiet)
                 elif alg == "tlsh":
-                    hash1, hash2, metric = tf.tlsh_files(full_f1, full_f2)
+                    hash1, hash2, metric = tf.tlsh_files(full_f1, full_f2, quiet)
                 elif alg == "mvhash":
-                    hash1, hash2, metric = mf.mvhash_files(full_f1, full_f2)
+                    hash1, hash2, metric = mf.mvhash_files(full_f1, full_f2, quiet)
                 else:
                     print("[ ERROR ] algorithm not supported")
                     sys.exit(0)
                 
-                if alg == 'all':
-                    writer.writerow([file1, file2, category] + [ssdeep, tlsh, mvhash])
+                bin1 = file1.split('-')[0]
+                bin2 = file2.split('-')[0]
+                if bin1 == bin2:
+                    truth = 'yes'
                 else:
-                    writer.writerow([file1, file2, category, metric, hash1, hash2])
+                    truth = 'no'
+
+                if alg == 'all':
+                    writer.writerow([file1, file2, category] + [ssdeep, tlsh, mvhash] + [truth])
+                else:
+                    writer.writerow([file1, file2, category, metric, hash1, hash2, truth])
                 
             
 #
@@ -95,9 +112,9 @@ def compare_all_dirs(args):
     writer = csv.writer(csvfile, delimiter=',')
 
     if args.algorithm == 'all':
-        writer.writerow(['file1', 'file2', 'section'] + supported_algs)
+        writer.writerow(['file1', 'file2', 'section'] + supported_algs + ['truth'])
     else: 
-        writer.writerow(['file1', 'file2', 'section', 'metric', 'hash1', 'hash2'])
+        writer.writerow(['file1', 'file2', 'section', 'metric', 'hash1', 'hash2', 'truth'])
 
     # for every directory
     for d1 in os.listdir(args.out):
@@ -113,7 +130,7 @@ def compare_all_dirs(args):
             # omit self and ones you've already been compared to unless extra is set
             if not args.extra and d2 in done: continue
 
-            compare_all_files(fulld1, fulld2, writer, args.algorithm)
+            compare_all_files(fulld1, fulld2, writer, args.algorithm, args.quiet)
             
     csvfile.close()
 
@@ -139,6 +156,10 @@ def main():
                         help='set to perform repetitive comparisons (self to self, file1 to file2 and vice versa)')
     parser.add_argument('-o', dest='out', help='output directory', default="out-compare_all")
     parser.add_argument('--viz', dest='viz', action='store_true', help='set to create html visualization')
+    parser.add_argument('-a', '--allDirs', action='store_true',
+                        help='process all directories within supplied directory')
+    parser.add_argument('-q', '--quiet', action='store_true',
+                        help='silence print statements from hashing results')
     
     args = parser.parse_args()
 
