@@ -58,8 +58,12 @@ def compare_all_files(d1, d2, writer, alg):
 
                 full_f1 = os.path.join(d1, file1)
                 full_f2 = os.path.join(d2, file2)
-                
-                if alg == "ssdeep":
+               
+                if alg == 'all':
+                    _,_,ssdeep = sf.ssdeep_files(full_f1, full_f2)
+                    _,_,tlsh = tf.tlsh_files(full_f1, full_f2)
+                    _,_,mvhash = mf.mvhash_files(full_f1, full_f2)
+                elif alg == "ssdeep":
                     hash1, hash2, metric = sf.ssdeep_files(full_f1, full_f2)
                 elif alg == "tlsh":
                     hash1, hash2, metric = tf.tlsh_files(full_f1, full_f2)
@@ -69,7 +73,10 @@ def compare_all_files(d1, d2, writer, alg):
                     print("[ ERROR ] algorithm not supported")
                     sys.exit(0)
                 
-                writer.writerow([file1, file2, category, metric, hash1, hash2])
+                if alg == 'all':
+                    writer.writerow([file1, file2, category] + [ssdeep, tlsh, mvhash])
+                else:
+                    writer.writerow([file1, file2, category, metric, hash1, hash2])
                 
             
 #
@@ -86,7 +93,11 @@ def compare_all_dirs(args):
     csvfilename = args.algorithm + "-comparisons.csv"
     csvfile = open(args.out + "/" + csvfilename, 'w')
     writer = csv.writer(csvfile, delimiter=',')
-    writer.writerow(['file1', 'file2', 'section', 'metric', 'hash1', 'hash2'])
+
+    if args.algorithm == 'all':
+        writer.writerow(['file1', 'file2', 'section'] + supported_algs)
+    else: 
+        writer.writerow(['file1', 'file2', 'section', 'metric', 'hash1', 'hash2'])
 
     # for every directory
     for d1 in os.listdir(args.out):
@@ -140,7 +151,7 @@ def main():
     args.out = args.out + "/" + filedir_reformat
 
     # double check that algorithm is supported before going forward
-    if not args.algorithm in supported_algs:
+    if not args.algorithm in (supported_algs + ['all']):
         print("[ ERROR ] algorithm not supported: "+ args.algorithm)
         sys.exit(-1)
     
