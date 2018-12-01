@@ -90,10 +90,14 @@ def compare_all_files(d1, d2, writer, alg, quiet):
                 else:
                     truth = 'no'
 
+                file1_size = os.path.getsize(full_f1)
+                file2_size = os.path.getsize(full_f2)
+
+                file_info = [file1, file2, file1_size, file2_size, category]
                 if alg == 'all':
-                    writer.writerow([file1, file2, category] + [ssdeep, tlsh, mvhash] + [truth])
+                    writer.writerow(file_info + [ssdeep, tlsh, mvhash] + [truth])
                 else:
-                    writer.writerow([file1, file2, category, metric, hash1, hash2, truth])
+                    writer.writerow(file_info + [metric, hash1, hash2, truth])
                 
             
 #
@@ -111,10 +115,11 @@ def compare_all_dirs(args):
     csvfile = open(args.out + "/" + csvfilename, 'w')
     writer = csv.writer(csvfile, delimiter=',')
 
+    file_info_header = ['file1', 'file2', 'file1_size', 'file2_size', 'section']
     if args.algorithm == 'all':
-        writer.writerow(['file1', 'file2', 'section'] + supported_algs + ['truth'])
+        writer.writerow(file_info_header + supported_algs + ['truth'])
     else: 
-        writer.writerow(['file1', 'file2', 'section', 'metric', 'hash1', 'hash2', 'truth'])
+        writer.writerow(file_info_header + ['metric', 'hash1', 'hash2', 'truth'])
 
     # for every directory
     for d1 in os.listdir(args.out):
