@@ -8,7 +8,7 @@ import shutil
 def bucket(args):
     buckets =   {
                 # Identical, new build 
-                'coreutils_newBuild':   ['coreutils_8-30_O2', 'coreutils_8-30_newBuild'],
+                'coreutils_newBuild':   ['coreutils_8-30_O2', 'coreutils_8-30_O2_newBuild'],
                 # Identical, new build with debug/symbols
                 'coreutils_debug':      ['coreutils_8-30_O2_debug', 'coreutils_8-30_O2_newBuild_debug'],
                 # Different major version
