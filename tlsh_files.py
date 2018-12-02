@@ -1,14 +1,13 @@
 #!/usr/bin/python
 import tlsh
 import argparse
-import ssdeep
 
 def tlsh_files(file1, file2, quiet):
     with open(file1, 'rb') as f1:
-        hash1 = tlsh.hash(f1.read())
+        hash1 = tlsh.forcehash(f1.read())
     with open(file2, 'rb') as f2:
-        hash2 = tlsh.hash(f2.read())
-
+        hash2 = tlsh.forcehash(f2.read())
+        
     if hash1 and hash2:
         if not quiet: print("%s hash: %s" %(file1, hash1))
         if not quiet: print("%s hash: %s" %(file2, hash2))
