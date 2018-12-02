@@ -15,12 +15,18 @@
 
 #!/usr/bin/python
 import argparse
+import os
 import subprocess
 from subprocess import Popen, PIPE
 
+
 def mvhash_files(file1, file2, quiet):
+
+    modifier = ''
+    if os.path.getsize(file1) < 1000 and os.path.getsize(file2) < 1000:
+        modifier = '-t 1'
     
-    session = subprocess.Popen(['./mvHash', '-g', file1, file2],
+    session = subprocess.Popen(['./mvHash', '-g', modifier, file1, file2],
                                stdout=PIPE, stderr=PIPE)
     stdout,stderr = session.communicate()
 
