@@ -87,8 +87,10 @@ def main():
         for category in bins:
             print("%s:" %category)
             for alg in range(len(SUPPORTED_ALGS)):
-                print("\t%s: %d" %(SUPPORTED_ALGS[alg], 
-                        sum(bins[category][alg])/len(bins[category][alg])))
+                mean = 0
+                if len(bins[category][alg]):
+                    mean = sum(bins[category][alg])/len(bins[category][alg])
+                print("\t%s: %d" %(SUPPORTED_ALGS[alg], mean))
 
     if args.hist:
         print("HISTOGRAMS (10 even-width bins):")
