@@ -3,11 +3,6 @@ import tlsh
 import argparse
 import ssdeep
 
-HASH_LEN = 35 # Number of bytes in the hashes produced by TLSH. Differences
-              # are counted by TLSH in accordance with the number of bytes
-              # that differ between hashes. This is used to obtain a
-              # percentage like other metrics.
-
 def tlsh_files(file1, file2, quiet):
     with open(file1, 'rb') as f1:
         hash1 = tlsh.hash(f1.read())
@@ -21,7 +16,7 @@ def tlsh_files(file1, file2, quiet):
         differences = tlsh.diff(hash1, hash2)
         if not quiet: print("Differences: %d" % differences)
 
-        similarity = (( HASH_LEN - float(differences) ) / HASH_LEN )* 100
+        similarity = max(0, (( 300 - float(differences) ) / 3 ))
         if not quiet: print("similarity: %d" % similarity)
         
         return hash1, hash2, int(similarity)
@@ -37,7 +32,7 @@ def main():
 
     args = parser.parse_args()
 
-    tlsh_files(args.file1, args.file2)
+    tlsh_files(args.file1, args.file2, False)
 
 
 if __name__ == "__main__":
