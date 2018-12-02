@@ -10,7 +10,8 @@ def bucket(args):
                 # Identical, new build 
                 'coreutils_newBuild':   ['coreutils_8-30_O2', 'coreutils_8-30_O2_newBuild'],
                 # Identical, new build with debug/symbols
-                'coreutils_debug':      ['coreutils_8-30_O2_debug', 'coreutils_8-30_O2_newBuild_debug'],
+                'coreutils_debug':      ['coreutils_8-30_O2', 'coreutils_8-30_O2_debug', 
+                                        'coreutils_8-30_O2_newBuild_debug'],
                 # Different major version
                 'coreutils_major':      ['coreutils_6-12_O2', 'coreutils_7-6_O2', 'coreutils_8-30_O2'],
                 # Different minor version
