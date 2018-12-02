@@ -35,7 +35,7 @@ def mvhash_files(file1, file2, quiet):
         # having trouble catching the output from mvHash here. Most likely
         # files too short. You can run with normal mvHash to see
         if not quiet: print("Similarity could not be calculated")
-        return "", "", None
+        return "", "", 0
 
 def main():
     parser = argparse.ArgumentParser(description="perform tlsh hash on two files and compare")
