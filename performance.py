@@ -9,6 +9,8 @@ import sys
 import os
 import csv
 import argparse
+import numpy
+import matplotlib.pyplot as plt
 
 CSV_FILE1 = 0
 CSV_FILE2 = 1
@@ -18,7 +20,7 @@ CSV_SECTION = 4
 CSV_FIRST_ALG = 5
 CSV_TRUTH = 8
 
-SUPPORTED_ALGS = ['ssdeep', 'tlsh', 'mvhash']
+SUPPORTED_ALGS =  ['ssdeep', 'tlsh', 'mvhash']
 
 # Binaries which differ by name but considered to be equivalent
 equivalent_utilities = [["ls", "dir", "vdir"], ["true", "false"]]
@@ -58,11 +60,65 @@ def binVariants(args):
                 bins[comparison_category] = [[] for i in range(len(SUPPORTED_ALGS))]
 
             for alg in range(len(SUPPORTED_ALGS)):
-                if row[CSV_FIRST_ALG + alg] is not None:
+                if row[CSV_FIRST_ALG + alg].isdigit():
                     bins[comparison_category][alg].append(int(row[CSV_FIRST_ALG + alg]))
 
     return bins
 
+# Gets TP/FP rate for a list of scores as determined by scores 
+#   which exceed the provided threshold
+def getRate(scores, threshold):
+    count = 0.0
+
+    for score in scores:
+        if score >= threshold: count += 1
+
+    rate = count / len(scores)
+
+    return rate
+
+def combineScores(bins):
+    allscores = [[] for i in range(len(SUPPORTED_ALGS))]
+
+    for b in bins:
+        for alg in range(len(SUPPORTED_ALGS)):
+            for score in bins[b][alg]:
+                allscores[alg].append(score)
+
+    return allscores
+
+def plotRoc(tpScores, fpScores, plotName):
+    for alg in range(len(SUPPORTED_ALGS)):
+        tpRates = []
+        fpRates = []
+        for threshold in range(0, 100):
+            tpRates.append(getRate(tpScores[alg], threshold))
+            fpRates.append(getRate(fpScores[alg], threshold))
+
+        plt.plot(fpRates, tpRates, label=SUPPORTED_ALGS[alg])
+        
+    plt.title("ROC Analysis: %s" %plotName)
+    plt.legend()
+
+def roc(tpBins, fpBins, bucketName):
+    plot_count = 1
+    # Form plot of each individual comparison category
+    for b in tpBins:
+        plt.figure(plot_count)
+        plotRoc(tpBins[b], fpBins[b], b)
+
+        plot_count += 1
+
+    # Combine all scores for each algorithm to get single combined plot
+    tpScores = combineScores(tpBins)
+    fpScores = combineScores(fpBins)
+ 
+    plotName = bucketName + " bucket"
+    plt.figure(plot_count)
+    plotRoc(tpScores, fpScores, plotName)
+
+    plt.show()
+    
 def main():
     parser = argparse.ArgumentParser(description="Compute performances of each algorithm \
                     based on provided CSV. By default, calculates performance of true positives")
@@ -79,14 +135,28 @@ def main():
     parser.add_argument('--hist', action='store_true',
                         help='form histogram (10 buckets) for each algorithm')
     parser.add_argument('--plot', action='store_true', help='plot histograms')
+    parser.add_argument('--roc', action='store_true', help='perform roc analysis (with plots)')
     
     args = parser.parse_args()
 
     if not os.path.isfile(args.csv):
         print("[ ERROR ] Provided CSV is not a file")
         sys.exit(-1)
-
+    
     bins = binVariants(args)
+
+    if args.roc:
+        # Assume name of bucket is name of csv
+        # (this is only used to display the bucket's name in ROC curves)
+        bucketName = os.path.basename(args.csv).split('.')[0]
+
+        args.falsePos = False
+        tpBins = binVariants(args)
+
+        args.falsePos = True
+        fpBins = binVariants(args)
+
+        roc(tpBins, fpBins, bucketName)
 
     if args.avg:  
         print("AVERAGES:")
@@ -101,8 +171,6 @@ def main():
 
     if args.hist:
         print("HISTOGRAMS (10 even-width bins):")
-        import numpy
-        import matplotlib.pyplot as plt
 
         plot_count = 1
         for category in bins:
