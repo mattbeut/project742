@@ -20,6 +20,9 @@ CSV_TRUTH = 8
 
 SUPPORTED_ALGS = ['ssdeep', 'tlsh', 'mvhash']
 
+# Binaries which differ by name but considered to be equivalent
+equivalent_utilities = [["ls", "dir", "vdir"], ["true", "false"]]
+
 # Sorts comparison results into bins of variant comparisons
 # e.g. bins comparisons between O0 and O1 variants separate from comparisons 
 #   between O0 and O2 variants, for each of the three algs
@@ -34,14 +37,17 @@ def binVariants(args):
             truth = row[CSV_TRUTH] == 'yes'
             # Only consider either true or false positives
             if truth == args.falsePos: continue
+            # Only consider sections if argument provided
+            if not args.sections and row[CSV_SECTION] != 'full': continue
             # If min size provided, only consider comparisons of files at least that size
             if args.minSize and (row[CSV_FILE1_SIZE] < args.minSize or \
                     row[CSV_FILE2_SIZE] < args.minSize): continue
-            # Only consider sections if argument provided
-            if not args.sections and row[CSV_SECTION] != 'full': continue
 
             file1_variant = row[CSV_FILE1].split('coreutils_')[1]
             file2_variant = row[CSV_FILE2].split('coreutils_')[1]
+
+            # Must be different build variants
+            if file1_variant == file2_variant: continue
 
             comparison_category = [file1_variant, file2_variant]
             # Sort alphabetically so that order doesn't matter and combine into string
@@ -52,7 +58,7 @@ def binVariants(args):
                 bins[comparison_category] = [[] for i in range(len(SUPPORTED_ALGS))]
 
             for alg in range(len(SUPPORTED_ALGS)):
-                if row[CSV_FIRST_ALG + alg]:
+                if row[CSV_FIRST_ALG + alg] is not None:
                     bins[comparison_category][alg].append(int(row[CSV_FIRST_ALG + alg]))
 
     return bins
@@ -65,7 +71,7 @@ def main():
                         help='calculate performance for comparisons labeled truth=no (false positives)')
     parser.add_argument('-s', '--sections', action='store_true',
                         help='include comparisons between individual sections in addition to full files')
-    parser.add_argument('-m', '--minSize',
+    parser.add_argument('-m', '--minSize', type=int,
                         help='Only consider comparisons that were between files \
                                 that meet this size threshold (in bytes)')
     parser.add_argument('--avg', action='store_true',
@@ -90,7 +96,8 @@ def main():
                 mean = 0
                 if len(bins[category][alg]):
                     mean = sum(bins[category][alg])/len(bins[category][alg])
-                print("\t%s: %d" %(SUPPORTED_ALGS[alg], mean))
+                print("\t%s (count: %d): %d" %(SUPPORTED_ALGS[alg],
+                            len(bins[category][alg]), mean))
 
     if args.hist:
         print("HISTOGRAMS (10 even-width bins):")
@@ -110,21 +117,33 @@ def main():
                     weights = numpy.ones_like(bins[category][alg])/float(len(bins[category][alg]))
 
                     plt.figure(plot_count)
-                    plt.title("%s: %s" %(SUPPORTED_ALGS[alg], category))
+                    plt.title("%s (count: %d): %s" %(SUPPORTED_ALGS[alg],
+                                len(bins[category][alg]), category))
                     plt.xlim(0, 100)
                     plt.xticks([i*10 for i in range(11)])
                     plt.ylim(0, 1)
 
                     _,_,patches = plt.hist(bins[category][alg], range=(0, 100), weights=weights)
 
-                    # red: score <= 10
-                    patches[0].set_fc('r')
-                    # yellow: 10 < score < 50
+                    # Color differently for true and false positives:
+                    #   red: bad (TP < 10, FP > 50)
+                    #   yellow: ok (10 < (TP or FP) < 50)
+                    #   green: good (TP > 50, FP < 10)
+
                     for i in range(1, 5):
                         patches[i].set_fc('y')
-                    # green: score >= 50
-                    for i in range(5, 10):
-                        patches[i].set_fc('g')
+
+                    # False Positives
+                    if args.falsePos:
+                        patches[0].set_fc('g')
+                        for i in range(5, 10):
+                            patches[i].set_fc('r')
+
+                    # True Positives
+                    else:
+                        patches[0].set_fc('r')
+                        for i in range(5, 10):
+                            patches[i].set_fc('g')
 
                     plot_count += 1
 
