@@ -19,6 +19,9 @@ import mvhash_files as mf
 
 supported_algs = ["ssdeep", "tlsh", "mvhash"]
 
+# Binaries which differ by name but considered to be equivalent
+equivalent_utilities = [["ls", "dir", "vdir"], ["true", "false"]]
+
 def preprocess_dir(args):
     filedir = args.directory
 
@@ -85,7 +88,13 @@ def compare_all_files(d1, d2, writer, alg, quiet):
                 
                 bin1 = file1.split('-')[0]
                 bin2 = file2.split('-')[0]
-                if bin1 == bin2:
+
+                equivalent = False
+                for group in equivalent_utilities:
+                    if (bin1 in group and bin2 in group):
+                        equivalent = True
+
+                if (bin1 == bin2) or equivalent:
                     truth = 'yes'
                 else:
                     truth = 'no'
@@ -162,7 +171,8 @@ def main():
     parser.add_argument('-o', dest='out', help='output directory', default="out-compare_all")
     parser.add_argument('--viz', dest='viz', action='store_true', help='set to create html visualization')
     parser.add_argument('-a', '--allDirs', action='store_true',
-                        help='process all directories within supplied directory')
+                        help='process all directories within supplied directory \
+                        (used for comparing a whole bucket)')
     parser.add_argument('-q', '--quiet', action='store_true',
                         help='silence print statements from hashing results')
     
