@@ -45,30 +45,21 @@
         var links = [];
 
         csv.forEach(function(row) {
-                if(row.section == "%SECTION%") { 
-		    var file1 = row.file1;
-	    	    var file2 = row.file2;
+            var file1 = row.file1;
+	    var file2 = row.file2;
 
-                    var prog1 = file1.split("-")[0];
-                    var prog2 = file2.split("-")[0];
-
-                    %PROGRAMS_CONDITIONAL% {
-    
-  		        // Add the files to the set of nodes	
-		        nodes.push({id: file1, value: file1.split("-")[0]});
-		        nodes.push({id: file2, value: file2.split("-")[0]});
+            // Add the files to the set of nodes	
+            nodes.push({id: file1, value: file1.split("-")[0]});
+            nodes.push({id: file2, value: file2.split("-")[0]});
 		
-                        // add a link between files ONLY if some similiarity
-                        var metric = row.%METRIC%;  
-		        if (metric > 0){
-		   	    links.push({source: file1, 
-				    target: file2,
-				    value: metric
-				  });
-                        }
-    
-                     }
-                 }
+            // add a link between files ONLY if some similiarity
+            var metric = row.%METRIC%;  
+            if (metric > 0){
+     	        links.push({source: file1, 
+			    target: file2,
+			    value: metric
+			  });
+            }
         });
 
 

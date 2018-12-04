@@ -11,37 +11,59 @@
 import os
 import sys
 import argparse
+import csv
 from shutil import copyfile
 import fileinput
 
-def create_visualization(csvfilename, section, programs, metric):
-    if len(programs) == 0:
-        print("\nNo programs selected; generating visualization for " + section + " section of all")
-    else:
-        print("\nGenerating visualization for " + section + " section of " + str(len(programs)) + " programs (remember 11 is optimal for color scheme) : ")
-        print programs
-        
+def create_visualization(csvfilename, section, programs, metric):        
+    new_csvfilename = os.path.splitext(csvfilename)[0] + "-" + section + "_gen" + ".csv"
+
     template_file = "template2.html"
-
-    html_file = os.path.join(os.path.splitext(csvfilename)[0] + "-" + section + ".html")
-
+    html_file = os.path.splitext(csvfilename)[0] + "-" + section + ".html"
+    
     copyfile(template_file, html_file)
     
+    if len(programs) == 0:
+        print("\nNo programs selected; generating visualization for " + section + " section of all")
+        # creating a smaller csv file now instead of making the javascript do all the work in the browser
+        # this filters on the section selected
+        with open(csvfilename) as csvfile:
+            with open (new_csvfilename, 'wb') as n_csv:
+                reader = csv.reader(csvfile)
+                writer = csv.writer(n_csv)
+
+                headers = next(reader)
+                writer.writerow(headers)
+                
+                for row in reader:
+                    if row[4] == section:
+                        writer.writerow(row)
+    else:
+        print("\nGenerating visualization for " + section + " section of " + str(len(programs)) + " programs: ")
+        print programs
+
+        # creating a smaller csv file now instead of making the javascript do all the work in the browser
+        # this filters on the programs and section selected
+        with open(csvfilename) as csvfile:
+            with open (new_csvfilename, 'wb') as n_csv:
+                reader = csv.reader(csvfile)
+                writer = csv.writer(n_csv)
+
+                headers = next(reader)
+                writer.writerow(headers)
+                
+                for row in reader:
+                    if row[0].split('-')[0] in programs and row[1].split('-')[0] in programs and row[4] == section:
+                        writer.writerow(row)
+                    
+    # Now replacing key strings in template with the values provided
     for line in fileinput.input(html_file, inplace=True):
         if "%CSV_FILENAME%" in line:
-            print line.replace("%CSV_FILENAME%", os.path.basename(csvfilename))
+            print line.replace("%CSV_FILENAME%", os.path.basename(new_csvfilename))
         elif "%SECTION%" in line:
             print line.replace("%SECTION%", section)
         elif "%METRIC%" in line:
             print line.replace("%METRIC%", metric)
-        elif "%PROGRAMS_CONDITIONAL%" in line:
-            if len(programs) == 0 :
-                print line.replace("%PROGRAMS_CONDITIONAL%", "if (true) ")
-            else :
-                a = "[\"" + "\", \"".join(str(x) for x in programs) + "\"]"
-                str_replace = "var progs = " + a + "\n"
-                str_replace += "if (progs.includes(prog1) && progs.includes(prog2)) "
-                print line.replace("%PROGRAMS_CONDITIONAL%", str_replace)
         else:
             print line
 
