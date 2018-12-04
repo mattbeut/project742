@@ -21,8 +21,8 @@ def tlsh_files(file1, file2, quiet):
         return hash1, hash2, int(similarity)
 
     else:
-        if not quiet: print("[ ERROR ] unable to perform hash")
-        return hash1, hash2, None
+        if not quiet: print("[ ERROR ] unable to perform hash. Returning 0")
+        return hash1, hash2, 0
 
 def main():
     parser = argparse.ArgumentParser(description="perform tlsh hash on two files and compare")
