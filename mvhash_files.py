@@ -23,8 +23,6 @@ from subprocess import Popen, PIPE
 def mvhash_files(file1, file2, quiet):
 
     modifier = ''
-    if os.path.getsize(file1) < 1000 and os.path.getsize(file2) < 1000:
-        modifier = '-t 1'
     
     session = subprocess.Popen(['./mvHash', '-g', modifier, file1, file2],
                                stdout=PIPE, stderr=PIPE)
@@ -41,7 +39,17 @@ def mvhash_files(file1, file2, quiet):
         # having trouble catching the output from mvHash here. Most likely
         # files too short. You can run with normal mvHash to see
         if not quiet: print("Similarity could not be calculated")
-        return "", "", 0
+        session = subprocess.Popen(['./mvHash', '-g', '-t 2', file1, file2],
+                               stdout=PIPE, stderr=PIPE)
+        stdout,stderr = session.communicate()
+        t2_similarity_str = stdout.split('|')[-1]
+
+        session = subprocess.Popen(['./mvHash', '-g', '-t 1', file1, file2],
+                               stdout=PIPE, stderr=PIPE)
+        stdout,stderr = session.communicate()
+        t1_similarity_str = stdout.split('|')[-1]
+        
+        return "", "", "error t2={} t1={}".format(t2_similarity_str, t1_similarity_str)
 
 def main():
     parser = argparse.ArgumentParser(description="perform tlsh hash on two files and compare")
