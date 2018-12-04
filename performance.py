@@ -21,6 +21,10 @@ CSV_FIRST_ALG = 5
 CSV_TRUTH = 8
 
 SUPPORTED_ALGS =  ['ssdeep', 'tlsh', 'mvhash']
+NUM_ALGS = len(SUPPORTED_ALGS)
+
+# Maximum FP rate (used for finding a normalized score threshold across all algs)
+MAX_FP_RATE = .20
 
 # Binaries which differ by name but considered to be equivalent
 equivalent_utilities = [["ls", "dir", "vdir"], ["true", "false"]]
@@ -57,9 +61,9 @@ def binVariants(args):
             comparison_category = '  <--->  '.join(comparison_category)
 
             if comparison_category not in bins:
-                bins[comparison_category] = [[] for i in range(len(SUPPORTED_ALGS))]
+                bins[comparison_category] = [[] for i in range(NUM_ALGS)]
 
-            for alg in range(len(SUPPORTED_ALGS)):
+            for alg in range(NUM_ALGS):
                 if row[CSV_FIRST_ALG + alg].isdigit():
                     bins[comparison_category][alg].append(int(row[CSV_FIRST_ALG + alg]))
 
@@ -78,29 +82,50 @@ def getRate(scores, threshold):
     return rate
 
 def combineScores(bins):
-    allscores = [[] for i in range(len(SUPPORTED_ALGS))]
+    allscores = [[] for i in range(NUM_ALGS)]
 
     for b in bins:
-        for alg in range(len(SUPPORTED_ALGS)):
+        for alg in range(NUM_ALGS):
             for score in bins[b][alg]:
                 allscores[alg].append(score)
 
     return allscores
 
 def plotRoc(tpScores, fpScores, plotName):
-    for alg in range(len(SUPPORTED_ALGS)):
+    # Track lowest thresholds that achieve FP rate below MAX_FP_RATE
+    minThresholds = [100] * NUM_ALGS
+    # TP rate corresponding to this minimum threshold
+    minThresholds_tpRates = [0.0] * NUM_ALGS
+
+    for alg in range(NUM_ALGS):
         tpRates = []
         fpRates = []
         for threshold in range(0, 100):
-            tpRates.append(getRate(tpScores[alg], threshold))
-            fpRates.append(getRate(fpScores[alg], threshold))
+            tpRate = getRate(tpScores[alg], threshold)
+            fpRate = getRate(fpScores[alg], threshold)
+
+            tpRates.append(tpRate)
+            fpRates.append(fpRate)
+
+            if fpRate < MAX_FP_RATE and threshold < minThresholds[alg]:
+                minThresholds[alg] = threshold
+                minThresholds_tpRates[alg] = tpRate
 
         plt.plot(fpRates, tpRates, label=SUPPORTED_ALGS[alg])
         
-    plt.title("ROC Analysis: %s" %plotName)
+    plt.title("ROC Curve: %s" %plotName)
     plt.legend()
 
-def roc(tpBins, fpBins, bucketName):
+    for alg in range(NUM_ALGS):
+        print("%s: (%s) Minimum %s FP-rate threshold: %d (TP-rate = %s)" \
+                    %(SUPPORTED_ALGS[alg],
+                    plotName,
+                    MAX_FP_RATE,
+                    minThresholds[alg],
+                    round(minThresholds_tpRates[alg], 2)))
+
+                                                
+def roc(tpBins, fpBins, bucketName, plotResults):
     plot_count = 1
     # Form plot of each individual comparison category
     for b in tpBins:
@@ -117,7 +142,7 @@ def roc(tpBins, fpBins, bucketName):
     plt.figure(plot_count)
     plotRoc(tpScores, fpScores, plotName)
 
-    plt.show()
+    if plotResults: plt.show()
     
 def main():
     parser = argparse.ArgumentParser(description="Compute performances of each algorithm \
@@ -134,7 +159,7 @@ def main():
                         help='calculate average for each algorithm')
     parser.add_argument('--hist', action='store_true',
                         help='form histogram (10 buckets) for each algorithm')
-    parser.add_argument('--plot', action='store_true', help='plot histograms')
+    parser.add_argument('--plot', action='store_true', help='plot histograms/roc curves')
     parser.add_argument('--roc', action='store_true', help='perform roc analysis (with plots)')
     
     args = parser.parse_args()
@@ -156,13 +181,13 @@ def main():
         args.falsePos = True
         fpBins = binVariants(args)
 
-        roc(tpBins, fpBins, bucketName)
+        roc(tpBins, fpBins, bucketName, args.plot)
 
     if args.avg:  
         print("AVERAGES:")
         for category in bins:
             print("%s:" %category)
-            for alg in range(len(SUPPORTED_ALGS)):
+            for alg in range(NUM_ALGS):
                 mean = 0
                 if len(bins[category][alg]):
                     mean = sum(bins[category][alg])/len(bins[category][alg])
@@ -175,7 +200,7 @@ def main():
         plot_count = 1
         for category in bins:
             print("%s:" %category)
-            for alg in range(len(SUPPORTED_ALGS)):
+            for alg in range(NUM_ALGS):
                 hist,_ = numpy.histogram(bins[category][alg])
                 print("\t%s: %s" %(SUPPORTED_ALGS[alg], hist))
 
