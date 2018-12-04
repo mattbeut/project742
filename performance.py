@@ -194,52 +194,57 @@ def main():
                 print("\t%s (count: %d): %d" %(SUPPORTED_ALGS[alg],
                             len(bins[category][alg]), mean))
 
+        if args.hist: print()
+
     if args.hist:
         print("HISTOGRAMS (10 even-width bins):")
 
         plot_count = 1
         for category in bins:
             print("%s:" %category)
+
             for alg in range(NUM_ALGS):
-                hist,_ = numpy.histogram(bins[category][alg])
-                print("\t%s: %s" %(SUPPORTED_ALGS[alg], hist))
+                # Normalize so sum of bars = 1
+                weights = numpy.ones_like(bins[category][alg])/float(len(bins[category][alg]))
 
-                # Plot with matplotlib
-                if args.plot:
-                    # Normalize so sum of bars = 1
-                    weights = numpy.ones_like(bins[category][alg])/float(len(bins[category][alg]))
+                # Get histogram data (not-normalized)
+                hist,_ = numpy.histogram(bins[category][alg], range=(0, 100))
+                intHist = [int(n) for n in hist]
+                print("\t%s: %s" %(SUPPORTED_ALGS[alg], intHist))
 
-                    plt.figure(plot_count)
-                    plt.title("%s (count: %d): %s" %(SUPPORTED_ALGS[alg],
-                                len(bins[category][alg]), category))
-                    plt.xlim(0, 100)
-                    plt.xticks([i*10 for i in range(11)])
-                    plt.ylim(0, 1)
+                plt.figure(plot_count)
+                plt.title("%s (count: %d): %s" %(SUPPORTED_ALGS[alg],
+                            len(bins[category][alg]), category))
+                plt.xlim(0, 100)
+                plt.xticks([i*10 for i in range(11)])
+                plt.ylim(0, 1)
 
-                    _,_,patches = plt.hist(bins[category][alg], range=(0, 100), weights=weights)
+                # Get normalized histogram for visual
+                _,_,patches = plt.hist(bins[category][alg], range=(0, 100), weights=weights)
 
-                    # Color differently for true and false positives:
-                    #   red: bad (TP < 10, FP > 50)
-                    #   yellow: ok (10 < (TP or FP) < 50)
-                    #   green: good (TP > 50, FP < 10)
+                # Color differently for true and false positives:
+                #   red: bad (TP < 10, FP > 50)
+                #   yellow: ok (10 < (TP or FP) < 50)
+                #   green: good (TP > 50, FP < 10)
 
-                    for i in range(1, 5):
-                        patches[i].set_fc('y')
+                for i in range(1, 5):
+                    patches[i].set_fc('y')
 
-                    # False Positives
-                    if args.falsePos:
-                        patches[0].set_fc('g')
-                        for i in range(5, 10):
-                            patches[i].set_fc('r')
+                # False Positives
+                if args.falsePos:
+                    patches[0].set_fc('g')
+                    for i in range(5, 10):
+                        patches[i].set_fc('r')
 
-                    # True Positives
-                    else:
-                        patches[0].set_fc('r')
-                        for i in range(5, 10):
-                            patches[i].set_fc('g')
+                # True Positives
+                else:
+                    patches[0].set_fc('r')
+                    for i in range(5, 10):
+                        patches[i].set_fc('g')
 
-                    plot_count += 1
+                plot_count += 1
 
+        # Plot with matplotlib
         if args.plot: plt.show()
 
 if __name__ == "__main__":
