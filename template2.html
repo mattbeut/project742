@@ -27,14 +27,13 @@
         width = +svg.attr("width"),
         height = +svg.attr("height");
 
-    var color = d3.scaleOrdinal()
-    .range(["#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99",
-    "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a", "#ffff99"]);
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
 
+    var stroke_color = d3.scaleOrdinal().range(["#a6cee3", "#fdbf6f"]);
     var simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.id; })
             .distance(function(d) {
-                return (100 - d.value );}))
+                return (103 - d.value );}))
         .force("charge", d3.forceManyBody()
             .distanceMax(300))
         .force("center", d3.forceCenter(width/2, height/2))
@@ -58,7 +57,8 @@
             if (metric > 0){
      	        links.push({source: file1, 
 			    target: file2,
-			    value: metric
+                            value: metric,
+                            truth: row.truth
 			  });
             }
         });
@@ -94,11 +94,11 @@
             .selectAll("line")
             .data(graph.links)
             .enter().append("line")
-            .attr("stroke-width", 2) //choosing not to have link width tied to similarity for 
-                                     //now. used to be : //function(d) { return (d.value/7) ; });
+            .attr("stroke-width", 2)
+            .style("stroke", function(d) {return stroke_color(d.truth);})
         link.append("title")
             .text(function(d) {
-                return d.source + " & " + d.target + ": " + d.value + " %";
+                return d.source + " & " + d.target + ": " + d.value + " % (" + d.truth +")";
             });
 
         var node = svg.append("g")
