@@ -15,11 +15,12 @@ import csv
 from shutil import copyfile
 import fileinput
 
-def create_visualization(csvfilename, section, programs, metric):        
-    new_csvfilename = os.path.splitext(csvfilename)[0] + "-" + section + "_gen" + ".csv"
+def create_visualization(csvfilename, section, programs, metric, threshold):
+    modifiers = "-" + section + "-" + metric + "-t" + str(threshold) 
+    new_csvfilename = os.path.splitext(csvfilename)[0] + modifiers + "_gen" + ".csv"
 
     template_file = "template2.html"
-    html_file = os.path.splitext(csvfilename)[0] + "-" + section + ".html"
+    html_file = os.path.splitext(csvfilename)[0] + modifiers + ".html"
     
     copyfile(template_file, html_file)
     
@@ -64,6 +65,8 @@ def create_visualization(csvfilename, section, programs, metric):
             print line.replace("%SECTION%", section)
         elif "%METRIC%" in line:
             print line.replace("%METRIC%", metric)
+        elif "%THRESHOLD%" in line:
+            print line.replace("%THRESHOLD%", str(threshold))
         else:
             print line
 
@@ -75,7 +78,8 @@ def main():
     parser.add_argument('csv', type=str, help="csv to base off of")
     parser.add_argument('section', type=str, help="section to create visualization for")
     parser.add_argument('programs', nargs='*', help="programs to filter on (optimal is 11)")
-    parser.add_argument('-m', dest='metric', help="name of column for similarity metric", default="metric") 
+    parser.add_argument('-m', dest='metric', help="name of column for similarity metric", default="metric")
+    parser.add_argument('-t', dest='threshold', help="threshold for link", default=0) 
 
     args = parser.parse_args()
 
@@ -83,7 +87,7 @@ def main():
         print("[ ERROR ] invalid section: "+args.section)
         sys.exit(-1)
 
-    create_visualization(args.csv, args.section, args.programs, args.metric)
+    create_visualization(args.csv, args.section, args.programs, args.metric, args.threshold)
     
 if __name__ == "__main__":
     main()

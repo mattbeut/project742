@@ -1,177 +1,354 @@
 <!--
+
 - visualization from https://bl.ocks.org/mbostock/4062045
+
 - Modifications by S. Helble
+
 -->
+
 <!DOCTYPE html>
+
 <meta charset="utf-8">
+
 <title>Similarity Visualization</title>
-<h1 style="font-family:'arial'">Similarity of %SECTION% of programs selected</h1>
+
+<h1 style="font-family:'arial'">Similarity of data of programs selected</h1>
+
 <style>
 
+
+
     .links line {
+
         stroke: #999;
+
         stroke-opacity: 0.6;
+
     }
+
+
 
     .nodes circle {
+
         stroke: #fff;
+
         stroke-width: 1.5px;
+
     }
 
+
+
 </style>
+
 <svg width="1200" height="800"></svg>
+
 <script src="https://d3js.org/d3.v4.min.js"></script>
+
 <script>
 
+
+
     var svg = d3.select("svg"),
+
         width = +svg.attr("width"),
+
         height = +svg.attr("height");
+
+
 
     var color = d3.scaleOrdinal(d3.schemeCategory20);
 
+
+
     var stroke_color = function(d) {
+
         if (d == "yes") {
+
             return "#a6cee3";
+
         } else {
+
             return "#fdbf6f";
+
         }};
 
+
+
     var simulation = d3.forceSimulation()
+
         .force("link", d3.forceLink().id(function(d) { return d.id; })
+
             .distance(function(d) {
+
                 return (103 - d.value );}))
+
         .force("charge", d3.forceManyBody()
+
             .distanceMax(300))
+
         .force("center", d3.forceCenter(width/2, height/2))
 
-    d3.csv("%CSV_FILENAME%", function(error, csv) {
+
+
+    d3.csv("newbuild-data-mvhash-t0_gen.csv", function(error, csv) {
+
 	if (error) throw error;
 
+
+
 	var nodes = [];
+
         var links = [];
 
+
+
         csv.forEach(function(row) {
+
             var file1 = row.file1;
+
 	    var file2 = row.file2;
 
+
+
             // Add the files to the set of nodes	
+
             nodes.push({id: file1, value: file1.split("-")[0]});
+
             nodes.push({id: file2, value: file2.split("-")[0]});
+
 		
+
             // add a link between files ONLY if some similiarity
-            var metric = row.%METRIC%;  
-            if (metric > %THRESHOLD%){
+
+            var metric = row.mvhash;  
+
+            if (metric > 0){
+
      	        links.push({source: file1, 
+
 			    target: file2,
+
                             value: metric,
+
                             truth: row.truth
+
 			  });
+
             }
+
         });
+
+
+
 
 
         var graph = {};
 
+
+
 	// This nesting eliminates duplicate nodes
+
 	// but also rolls all node.values into a list
+
 	// ex: Object { id: <filename> value: [{key: <section>}...] ...}
+
         var tmp_nodes = d3.nest()
+
             .key(function(d) { return d.id; })
+
             .key(function(d) {return d.value;} )
+
             .entries(nodes);
 
+
+
 	// This puts the nodes into their final data structure for 
+
 	// display, and flattens out the listing problem above.
+
         graph["nodes"] = [];
+
         tmp_nodes.forEach(function(node) {
+
             graph["nodes"].push({
+
                 id: node.key,
+
                 value: node.values[0]["key"]
+
             });
+
         });
 
+
+
 	// add the links
+
         graph["links"] = links;
+
+
 
         console.log(graph);
 
+
+
         var link = svg.append("g")
+
             .attr("class", "links")
+
             .selectAll("line")
+
             .data(graph.links)
+
             .enter().append("line")
+
             .attr("stroke-width", 2)
+
             .style("stroke", function(d) {return stroke_color(d.truth);})
+
         link.append("title")
+
             .text(function(d) {
+
                 return d.source + " & " + d.target + ": " + d.value + " % (" + d.truth +")";
+
             });
 
+
+
         var node = svg.append("g")
+
             .attr("class", "nodes")
+
             .selectAll(".node")
+
             .data(graph.nodes)
+
             .enter().append("g")
+
             .attr("class", "node")
+
             .call(d3.drag()
+
                 .on("start", dragstarted)
+
                 .on("drag", dragged)
+
                 .on("end", dragended));
 
+
+
         node.append("circle")
+
             .attr("r", 4)
+
             .attr("fill", function(d) { return color(d.value); });
+
       
+
 /* THIS IS FOR NODE LABELS. BECOMES TOO MESSY WITH A LARGE NUMBER OF NODES
+
         node.append("text")
+
             .attr("font-size", 10)
+
             .attr("background-color", "white")
+
             .attr("font-family", "calibri")
+
             .attr("font-weight", "bold")
+
             .attr("text-anchor", "middle")
+
             .attr("transform", "translate(0, 15)")
+
             .text(function(d) { return d.id; });
+
 */
+
         node.append("title")
+
             .text(function(d) { return d.id; });
+
+
 
         simulation
+
             .nodes(graph.nodes)
+
             .on("tick", ticked);
 
+
+
         simulation.force("link")
+
             .links(graph.links);
 
+
+
         function ticked() {
+
             link
+
                 .attr("x1", function(d) { return d.source.x; })
+
                 .attr("y1", function(d) { return d.source.y; })
+
                 .attr("x2", function(d) { return d.target.x; })
+
                 .attr("y2", function(d) { return d.target.y; });
 
+
+
             node
+
                 .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
                 /*
+
                 .attr("cx", function(d) { return d.x; })
+
                 .attr("cy", function(d) { return d.y; });*/
+
         }
+
     });
 
+
+
     function dragstarted(d) {
+
         if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+
         d.fx = d.x;
+
         d.fy = d.y;
+
     }
+
+
 
     function dragged(d) {
+
         d.fx = d3.event.x;
+
         d.fy = d3.event.y;
+
     }
+
+
 
     function dragended(d) {
+
         if (!d3.event.active) simulation.alphaTarget(0);
+
         d.fx = null;
+
         d.fy = null;
+
     }
 
+
+
 </script>
+

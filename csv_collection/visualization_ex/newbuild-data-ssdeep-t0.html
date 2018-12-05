@@ -12,7 +12,7 @@
 
 <title>Similarity Visualization</title>
 
-<h1 style="font-family:'arial'">Similarity of full of programs selected</h1>
+<h1 style="font-family:'arial'">Similarity of data of programs selected</h1>
 
 <style>
 
@@ -56,11 +56,21 @@
 
 
 
-    var color = d3.scaleOrdinal()
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-    .range(["#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99",
 
-    "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a", "#ffff99"]);
+
+    var stroke_color = function(d) {
+
+        if (d == "yes") {
+
+            return "#a6cee3";
+
+        } else {
+
+            return "#fdbf6f";
+
+        }};
 
 
 
@@ -70,7 +80,7 @@
 
             .distance(function(d) {
 
-                return (100 - d.value );}))
+                return (103 - d.value );}))
 
         .force("charge", d3.forceManyBody()
 
@@ -80,7 +90,7 @@
 
 
 
-    d3.csv("optimization-full_gen.csv", function(error, csv) {
+    d3.csv("newbuild-data-ssdeep-t0_gen.csv", function(error, csv) {
 
 	if (error) throw error;
 
@@ -118,7 +128,9 @@
 
 			    target: file2,
 
-			    value: metric
+                            value: metric,
+
+                            truth: row.truth
 
 			  });
 
@@ -190,15 +202,15 @@
 
             .enter().append("line")
 
-            .attr("stroke-width", 2) //choosing not to have link width tied to similarity for 
+            .attr("stroke-width", 2)
 
-                                     //now. used to be : //function(d) { return (d.value/7) ; });
+            .style("stroke", function(d) {return stroke_color(d.truth);})
 
         link.append("title")
 
             .text(function(d) {
 
-                return d.source + " & " + d.target + ": " + d.value + " %";
+                return d.source + " & " + d.target + ": " + d.value + " % (" + d.truth +")";
 
             });
 
