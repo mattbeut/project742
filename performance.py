@@ -131,6 +131,8 @@ def roc(tpBins, fpBins, bucketName, plotResults):
     for b in tpBins:
         plt.figure(plot_count)
         plotRoc(tpBins[b], fpBins[b], b)
+        # Dotted line for x=y to show worst-case ROC
+        plt.plot([0, 1], linestyle=':', color='black')
 
         plot_count += 1
 
@@ -141,6 +143,8 @@ def roc(tpBins, fpBins, bucketName, plotResults):
     plotName = bucketName + " bucket"
     plt.figure(plot_count)
     plotRoc(tpScores, fpScores, plotName)
+    # Dotted line for x=y to show worst-case ROC
+    plt.plot([0, 1], linestyle=':', color='black')
 
     if plotResults: plt.show()
     
